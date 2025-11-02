@@ -42,14 +42,25 @@ async function acceptQuest(context, user_data, quest) {
               timeEnd: 0.0,
               issueNum: 0,
             };
+            if (quests[quest][task].subtasks) {
+              for (const subtask in quests[quest][task].subtasks) {
+                user_data.accepted[quest][task][subtask] = {
+                  completed: false,
+                };
+              }
+            }
           }
-          // track current progress
-          user_data.current = {
-            quest: quest,
-            task: "T1", // depending on how indexing works in validate task, may need to change to 0
-          };
-          user_data.completion = 0;
         }
+        // track current progress
+        user_data.current = {
+          quest: quest,
+          task: "T1",
+        };
+        const firstTask = quests[quest]["T1"];
+        if (firstTask.subtasks) {
+          user_data.current.subtask = Object.keys(firstTask.subtasks)[0];
+        }
+        user_data.completion = 0;
         // initial start - create first task issue for all quests
         await createQuestEnvironment(user_data, quest, "T1", context);
         return true;
@@ -197,10 +208,15 @@ async function createQuestEnvironment(user_data, quest, task, context) {
       user_data.accepted[quest][task] = user_data.accepted[quest][task] || {};
 
       if (questData[task]) {
-        // Assign the start time once the structure is confirmed to exist
         user_data.accepted[quest][task].timeStart = Date.now();
-        response = response[task].accept;
-        title = questData[task].desc;
+        const subtask = user_data.current.subtask;
+        if (subtask) {
+          response = response[task][subtask].accept;
+          title = questData[task].subtasks[subtask].desc;
+        } else {
+          response = response[task].accept;
+          title = questData[task].desc;
+        }
       }
 
       // link to OSS repo
@@ -296,8 +312,9 @@ async function validateTask(user_data, context, user, db) {
     }
 
     // validate current task
-    const taskHandler = taskMapping[quest][task]; // function mapped through dictionary
-    let response = questResponse[quest][task];
+    const subtask = user_data.current.subtask;
+    const taskHandler = subtask ? taskMapping[quest][task][subtask] : taskMapping[quest][task];
+    let response = subtask ? questResponse[quest][task][subtask] : questResponse[quest][task];
     let success = null;
     let result = await taskHandler(
       user_data,
@@ -577,9 +594,20 @@ function displayQuests(user_data, context) {
         response += `    -  ~${taskKey} - ${questData[quest][taskKey].desc}~ [[COMPLETED](https://github.com/${repo.owner}/${repo.repo}/issues/${user_data.accepted[quest][taskKey].issueNum})]\n`;
       } else if (task == taskKey) {
         const issueNum = user_data.accepted[quest][taskKey].issueNum;
-        response += `    - ${taskKey} - ${questData[quest][taskKey].desc
-          } [[Click here to start](https://github.com/${repo.owner}/${repo.repo
-          }/issues/${issueNum})]\n`;
+        response += `    - ${taskKey} - ${questData[quest][taskKey].desc} [[Click here to start](https://github.com/${repo.owner}/${repo.repo}/issues/${issueNum})]\n`;
+        if (questData[quest][taskKey].subtasks) {
+          for (let subtaskKey in questData[quest][taskKey].subtasks) {
+            const subtaskDesc = questData[quest][taskKey].subtasks[subtaskKey].desc;
+            let isSubtaskCompleted = user_data.accepted[quest]?.[taskKey]?.[subtaskKey]?.completed ?? false;
+            if (isSubtaskCompleted) {
+              response += `        - ~${subtaskKey} - ${subtaskDesc}~ [[COMPLETED]]\n`;
+            } else if (user_data.current.subtask === subtaskKey) {
+              response += `        - ${subtaskKey} - ${subtaskDesc} [[CURRENT]]\n`;
+            } else {
+              response += `        - ${subtaskKey} - ${subtaskDesc}\n`;
+            }
+          }
+        }
       } else {
         response += `    - ${taskKey} - ${questData[quest][taskKey].desc}\n`;
       }
