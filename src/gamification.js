@@ -42,14 +42,25 @@ async function acceptQuest(context, user_data, quest) {
               timeEnd: 0.0,
               issueNum: 0,
             };
+            if (quests[quest][task].subtasks) {
+              for (const subtask in quests[quest][task].subtasks) {
+                user_data.accepted[quest][task][subtask] = {
+                  completed: false,
+                };
+              }
+            }
           }
-          // track current progress
-          user_data.current = {
-            quest: quest,
-            task: "T1", // depending on how indexing works in validate task, may need to change to 0
-          };
-          user_data.completion = 0;
         }
+        // track current progress
+        user_data.current = {
+          quest: quest,
+          task: "T1",
+        };
+        const firstTask = quests[quest]["T1"];
+        if (firstTask.subtasks) {
+          user_data.current.subtask = Object.keys(firstTask.subtasks)[0];
+        }
+        user_data.completion = 0;
         // initial start - create first task issue for all quests
         await createQuestEnvironment(user_data, quest, "T1", context);
         return true;
@@ -65,13 +76,13 @@ async function acceptQuest(context, user_data, quest) {
   }
 }
 
-export async function completeTask(user_data, quest, task, context, db) {
+export async function completeTask(user_data, quest, task, context, db, subtask = null) {
   const { owner, repo } = context.repo();
   try {
     const quests = JSON.parse(fs.readFileSync(questFilePath, "utf8"));
 
-    const points = quests[quest][task].points;
-    const xp = quests[quest][task].xp;
+    const points = subtask ? quests[quest][task].subtasks[subtask].points : quests[quest][task].points;
+    const xp = subtask ? quests[quest][task].subtasks[subtask].xp : quests[quest][task].xp;
 
     // check user accepted quest and task
     if (
@@ -79,28 +90,32 @@ export async function completeTask(user_data, quest, task, context, db) {
       user_data.accepted[quest] &&
       user_data.accepted[quest][task]
     ) {
-      // change quest data to complete
-      user_data.accepted[quest][task].completed = true;
+      if (subtask) {
+        user_data.accepted[quest][task][subtask].completed = true;
+      } else {
+        user_data.accepted[quest][task].completed = true;
+      }
       user_data.accepted[quest][task].timeEnd = Date.now();
       user_data.accepted[quest][task].issueNum = context.issue().issue_number;
 
       user_data.points += points;
       user_data.xp += xp;
 
-      // get list of tasks from quest in json except for metadata
       const tasks = Object.keys(quests[quest]).filter((t) => t !== "metadata");
       const taskIndex = tasks.indexOf(task);
+      const subtasks = quests[quest][task].subtasks ? Object.keys(quests[quest][task].subtasks) : [];
+      const subtaskIndex = subtasks.indexOf(subtask);
 
-      user_data.completion = (taskIndex + 1) / tasks.length;
-      user_data.completion = Math.round(user_data.completion * 100) / 100; // two decimal places
-
-      // more tasks
-      if (taskIndex !== -1 && taskIndex < tasks.length - 1) {
+      if (subtask && subtaskIndex < subtasks.length - 1) {
+        const nextSubtask = subtasks[subtaskIndex + 1];
+        user_data.current.subtask = nextSubtask;
+      } else if (taskIndex < tasks.length - 1) {
         const nextTask = tasks[taskIndex + 1];
         user_data.current.task = nextTask;
-        // last task
+        user_data.current.subtask = quests[quest][nextTask].subtasks ? Object.keys(quests[quest][nextTask].subtasks)[0] : null;
       } else {
         user_data.current.task = null;
+        user_data.current.subtask = null;
         await completeQuest(user_data, quest, context);
       }
 
@@ -193,10 +208,15 @@ async function createQuestEnvironment(user_data, quest, task, context) {
       user_data.accepted[quest][task] = user_data.accepted[quest][task] || {};
 
       if (questData[task]) {
-        // Assign the start time once the structure is confirmed to exist
         user_data.accepted[quest][task].timeStart = Date.now();
-        response = response[task].accept;
-        title = questData[task].desc;
+        const subtask = user_data.current.subtask;
+        if (subtask) {
+          response = response[task][subtask].accept;
+          title = questData[task].subtasks[subtask].desc;
+        } else {
+          response = response[task].accept;
+          title = questData[task].desc;
+        }
       }
 
       // link to OSS repo
@@ -207,12 +227,15 @@ async function createQuestEnvironment(user_data, quest, task, context) {
         body: response,
       });
       // new issue for new task
-      context.octokit.issues.create({
+      const newIssue = await context.octokit.issues.create({
         owner: owner,
         repo: repo,
         title: `❗ ${quest} ${task}: ` + title,
         body: response,
       });
+      if (newIssue && newIssue.data) {
+        user_data.accepted[quest][task].issueNum = newIssue.data.number;
+      }
     }
   } catch (error) {
     console.error("Error creating new issue: ", error);
@@ -289,8 +312,9 @@ async function validateTask(user_data, context, user, db) {
     }
 
     // validate current task
-    const taskHandler = taskMapping[quest][task]; // function mapped through dictionary
-    let response = questResponse[quest][task];
+    const subtask = user_data.current.subtask;
+    const taskHandler = subtask ? taskMapping[quest][task][subtask] : taskMapping[quest][task];
+    let response = subtask ? questResponse[quest][task][subtask] : questResponse[quest][task];
     let success = null;
     let result = await taskHandler(
       user_data,
@@ -569,9 +593,21 @@ function displayQuests(user_data, context) {
       if (isCompleted) {
         response += `    -  ~${taskKey} - ${questData[quest][taskKey].desc}~ [[COMPLETED](https://github.com/${repo.owner}/${repo.repo}/issues/${user_data.accepted[quest][taskKey].issueNum})]\n`;
       } else if (task == taskKey) {
-        response += `    - ${taskKey} - ${questData[quest][taskKey].desc
-          } [[Click here to start](https://github.com/${repo.owner}/${repo.repo
-          }/issues/${repo.issue_number + 1})]\n`; // WARNING, this is assuming user is responding on the last issue
+        const issueNum = user_data.accepted[quest][taskKey].issueNum;
+        response += `    - ${taskKey} - ${questData[quest][taskKey].desc} [[Click here to start](https://github.com/${repo.owner}/${repo.repo}/issues/${issueNum})]\n`;
+        if (questData[quest][taskKey].subtasks) {
+          for (let subtaskKey in questData[quest][taskKey].subtasks) {
+            const subtaskDesc = questData[quest][taskKey].subtasks[subtaskKey].desc;
+            let isSubtaskCompleted = user_data.accepted[quest]?.[taskKey]?.[subtaskKey]?.completed ?? false;
+            if (isSubtaskCompleted) {
+              response += `        - ~${subtaskKey} - ${subtaskDesc}~ [[COMPLETED]]\n`;
+            } else if (user_data.current.subtask === subtaskKey) {
+              response += `        - ${subtaskKey} - ${subtaskDesc} [[CURRENT]]\n`;
+            } else {
+              response += `        - ${subtaskKey} - ${subtaskDesc}\n`;
+            }
+          }
+        }
       } else {
         response += `    - ${taskKey} - ${questData[quest][taskKey].desc}\n`;
       }
