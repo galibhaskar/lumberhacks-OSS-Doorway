@@ -114,8 +114,8 @@
         "points": 15,
         "xp": 15,
         "subtasks": {
-            "ST1": "Create a feature branch",
-            "ST2": "Switch to the feature branch"
+            "ST1": {"desc": "Create a feature branch", "points": 7, "xp": 7},
+            "ST2": {"desc": "Switch to the feature branch", "points": 8, "xp": 8}
         }
     },
     "T2": {
@@ -123,8 +123,8 @@
         "points": 10,
         "xp": 10,
         "subtasks": {
-            "ST1": "Make a file change",
-            "ST2": "Commit the change with a conventional commit message"
+            "ST1": {"desc": "Make a file change", "points": 5, "xp": 5},
+            "ST2": {"desc": "Commit the change with a conventional commit message", "points": 5, "xp": 5}
         }
     },
     "T3": {
@@ -132,8 +132,8 @@
         "points": 15,
         "xp": 15,
         "subtasks": {
-            "ST1": "Push the feature branch to the remote repository",
-            "ST2": "Create a pull request with a proper title and description"
+            "ST1": {"desc": "Push the feature branch to the remote repository", "points": 7, "xp": 7},
+            "ST2": {"desc": "Create a pull request with a proper title and description", "points": 8, "xp": 8}
         }
     },
     "T4": {
@@ -141,9 +141,9 @@
         "points": 30,
         "xp": 30,
         "subtasks": {
-            "ST1": "Intentionally create a merge conflict",
-            "ST2": "Identify and resolve the merge conflict",
-            "ST3": "Commit the resolved merge"
+            "ST1": {"desc": "Intentionally create a merge conflict", "points": 10, "xp": 10},
+            "ST2": {"desc": "Identify and resolve the merge conflict", "points": 10, "xp": 10},
+            "ST3": {"desc": "Commit the resolved merge", "points": 10, "xp": 10}
         }
     },
     "T5": {
@@ -151,8 +151,8 @@
         "points": 15,
         "xp": 15,
         "subtasks": {
-            "ST1": "Request a code review",
-            "ST2": "Merge the pull request"
+            "ST1": {"desc": "Request a code review", "points": 7, "xp": 7},
+            "ST2": {"desc": "Merge the pull request", "points": 8, "xp": 8}
         }
     },
     "T6": {

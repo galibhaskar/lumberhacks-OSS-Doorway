@@ -650,6 +650,183 @@ async function verifyPullRequestMerged(repo, prNumber, context) {
     }
 }
 
+async function verifyBranchSwitch(repo, user, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+        const expectedBranchName = `feature/add-${user}-functionality`;
+
+        // Get the user's most recent commit
+        const commitsResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/commits`,
+            {
+                author: user,
+                per_page: 1,
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        if (commitsResponse.data.length === 0) {
+            return false;
+        }
+
+        const latestCommitSha = commitsResponse.data[0].sha;
+
+        // Get the branches that contain the commit
+        const branchesResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/commits/${latestCommitSha}/branches-where-head`,
+            {
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        // Check if the expected branch is in the list of branches
+        const onExpectedBranch = branchesResponse.data.some(
+            branch => branch.name.toLowerCase() === expectedBranchName.toLowerCase()
+        );
+
+        return onExpectedBranch;
+    } catch (error) {
+        console.error("Error verifying branch switch:", error);
+        return false;
+    }
+}
+
+async function verifyFileChange(repo, user, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+        const branchName = `feature/add-${user}-functionality`;
+
+        // Compare the branch with the main branch to see if there are changes
+        const compareResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/compare/main...${branchName}`,
+            {
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        // Check if there are any file changes
+        return compareResponse.data.files.length > 0;
+    } catch (error) {
+        console.error("Error verifying file change:", error);
+        return false;
+    }
+}
+
+async function verifyBranchPushed(repo, user, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+        const expectedBranchName = `feature/add-${user}-functionality`;
+
+        // Get all branches in the repository
+        const branchesResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/branches`,
+            {
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        // Check if the expected branch exists on the remote
+        const branchExists = branchesResponse.data.some(
+            branch => branch.name.toLowerCase() === expectedBranchName.toLowerCase()
+        );
+
+        return branchExists;
+    } catch (error) {
+        console.error("Error verifying branch push:", error);
+        return false;
+    }
+}
+
+async function createMergeConflict(repo, user, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+        const branchName = `feature/add-${user}-functionality`;
+
+        // Create a conflicting commit on the main branch
+        await context.octokit.repos.createOrUpdateFileContents({
+            owner,
+            repo: repoName,
+            path: "README.md",
+            message: "docs: create merge conflict",
+            content: Buffer.from("This is a conflicting line.").toString("base64"),
+            branch: "main",
+            committer: {
+                name: "gitBot",
+                email: "connor.nicolai.aiton@gmail.com",
+            },
+            author: {
+                name: "caiton1",
+                email: "connor.nicolai.aiton@gmail.com",
+            },
+        });
+
+        return true;
+    } catch (error) {
+        console.error("Error creating merge conflict:", error);
+        return false;
+    }
+}
+
+async function verifyReviewRequested(repo, prNumber, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+
+        // Get PR details
+        const prResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/pulls/${prNumber}`,
+            {
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        // Check if a review has been requested
+        return prResponse.data.requested_reviewers.length > 0;
+    } catch (error) {
+        console.error("Error verifying review request:", error);
+        return false;
+    }
+}
+
 export const utils = {
     getIssueCount,
     isFirstAssignee,
@@ -671,5 +848,10 @@ export const utils = {
     verifyCommitMessage,
     verifyPullRequest,
     verifyConflictResolved,
-    verifyPullRequestMerged
+    verifyPullRequestMerged,
+    verifyBranchSwitch,
+    verifyFileChange,
+    verifyBranchPushed,
+    createMergeConflict,
+    verifyReviewRequested
 };
