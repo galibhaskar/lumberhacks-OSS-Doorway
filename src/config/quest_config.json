@@ -110,29 +110,50 @@
       "prerequisite": "Q3"
     },
     "T1": {
-      "desc": "Create and switch to a feature branch",
-      "points": 30,
-      "xp": 30
+        "desc": "Git Branching Fundamentals",
+        "points": 15,
+        "xp": 15,
+        "subtasks": {
+            "ST1": "Create a feature branch",
+            "ST2": "Switch to the feature branch"
+        }
     },
     "T2": {
-      "desc": "Make changes on feature branch",
-      "points": 20,
-      "xp": 20
+        "desc": "Committing Changes",
+        "points": 10,
+        "xp": 10,
+        "subtasks": {
+            "ST1": "Make a file change",
+            "ST2": "Commit the change with a conventional commit message"
+        }
     },
     "T3": {
-      "desc": "Create pull request with proper naming",
-      "points": 25,
-      "xp": 25
+        "desc": "Pull Requests",
+        "points": 15,
+        "xp": 15,
+        "subtasks": {
+            "ST1": "Push the feature branch to the remote repository",
+            "ST2": "Create a pull request with a proper title and description"
+        }
     },
     "T4": {
-      "desc": "Resolve merge conflict using best practices",
-      "points": 50,
-      "xp": 50
+        "desc": "Resolving Merge Conflicts",
+        "points": 30,
+        "xp": 30,
+        "subtasks": {
+            "ST1": "Intentionally create a merge conflict",
+            "ST2": "Identify and resolve the merge conflict",
+            "ST3": "Commit the resolved merge"
+        }
     },
     "T5": {
-      "desc": "Final code review and merge",
-      "points": 30,
-      "xp": 30
+        "desc": "Finalizing the Contribution",
+        "points": 15,
+        "xp": 15,
+        "subtasks": {
+            "ST1": "Request a code review",
+            "ST2": "Merge the pull request"
+        }
     },
     "T6": {
       "desc": "Quiz",
