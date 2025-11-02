@@ -482,6 +482,174 @@ async function getIssueTitle(repo, user, user_data, selectedIssue) {
     }
 }
 
+// Q4 verification utilities
+async function verifyBranchCreated(repo, user, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+        const expectedBranchName = `feature/add-${user}-functionality`;
+
+        // Get all branches in the repository
+        const branchesResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/branches`,
+            {
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        // Check if the expected branch exists
+        const branchExists = branchesResponse.data.some(
+            branch => branch.name.toLowerCase() === expectedBranchName.toLowerCase()
+        );
+
+        return branchExists;
+    } catch (error) {
+        console.error("Error verifying branch creation:", error);
+        return false;
+    }
+}
+
+async function verifyCommitMessage(repo, user, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+        const branchName = `feature/add-${user}-functionality`;
+
+        // Get commits from the feature branch
+        const commitsResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/commits`,
+            {
+                sha: branchName,
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        // Check if there's at least one commit with conventional commit format
+        const hasProperCommit = commitsResponse.data.some(commit => {
+            const message = commit.commit.message.toLowerCase();
+            // Check for conventional commit format: feat:, fix:, docs:, etc.
+            return /^(feat|fix|docs|style|refactor|test|chore):\s/.test(message);
+        });
+
+        return hasProperCommit;
+    } catch (error) {
+        console.error("Error verifying commit message:", error);
+        return false;
+    }
+}
+
+async function verifyPullRequest(repo, prNumber, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+
+        // Get PR details
+        const prResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/pulls/${prNumber}`,
+            {
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        const prTitle = prResponse.data.title.toLowerCase();
+        
+        // Check if PR title follows conventional commit format
+        const hasProperFormat = /^(feat|fix|docs|style|refactor|test|chore):\s/.test(prTitle);
+
+        return hasProperFormat;
+    } catch (error) {
+        console.error("Error verifying pull request:", error);
+        return false;
+    }
+}
+
+async function verifyConflictResolved(repo, user, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+        const branchName = `feature/add-${user}-functionality`;
+
+        // Get the latest commit from the branch
+        const commitsResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/commits`,
+            {
+                sha: branchName,
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        // Check if there's a merge commit or conflict resolution commit
+        const hasConflictResolution = commitsResponse.data.some(commit => {
+            const message = commit.commit.message.toLowerCase();
+            return message.includes('merge') || 
+                   message.includes('conflict') || 
+                   message.includes('resolve') ||
+                   commit.parents.length > 1; // Merge commits have 2 parents
+        });
+
+        return hasConflictResolution;
+    } catch (error) {
+        console.error("Error verifying conflict resolution:", error);
+        return false;
+    }
+}
+
+async function verifyPullRequestMerged(repo, prNumber, context) {
+    try {
+        const installationID = context.payload.installation.id;
+        const accessToken = await context.octokit.auth({
+            type: "installation",
+            installationID,
+        });
+
+        const [owner, repoName] = repo.split('/');
+
+        // Get PR details
+        const prResponse = await context.octokit.request(
+            `GET /repos/${owner}/${repoName}/pulls/${prNumber}`,
+            {
+                headers: {
+                    authorization: `token ${accessToken.token}`,
+                },
+            }
+        );
+
+        // Check if PR is merged
+        return prResponse.data.merged === true;
+    } catch (error) {
+        console.error("Error verifying pull request merge:", error);
+        return false;
+    }
+}
+
 export const utils = {
     getIssueCount,
     isFirstAssignee,
@@ -498,5 +666,10 @@ export const utils = {
     getTopContributor,
     validateAnswers,
     hasNonCodeContributionLabel,
-    getIssueTitle
+    getIssueTitle,
+    verifyBranchCreated,
+    verifyCommitMessage,
+    verifyPullRequest,
+    verifyConflictResolved,
+    verifyPullRequestMerged
 };

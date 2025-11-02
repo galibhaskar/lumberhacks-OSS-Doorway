@@ -50,10 +50,8 @@ async function acceptQuest(context, user_data, quest) {
           };
           user_data.completion = 0;
         }
-        // initial start
-        if(quest === 'Q0'){
-          await createQuestEnvironment(user_data, quest, "T1", context);
-        }
+        // initial start - create first task issue for all quests
+        await createQuestEnvironment(user_data, quest, "T1", context);
         return true;
       } else {
         return false;
@@ -163,6 +161,9 @@ async function completeQuest(user_data, quest, context) {
       }
       else if (quest === "Q2") {
         await acceptQuest(context, user_data, "Q3");
+      }
+      else if (quest === "Q3") {
+        await acceptQuest(context, user_data, "Q4");
       }
 
       return true; // Quest successfully completed
@@ -387,6 +388,7 @@ async function generateSVG(owner, repo, context, user_data, db) {
       Q1: "Explorer 🚀",
       Q2: "Builder 🏗️",
       Q3: "Contributor 🥇",
+      Q4: "Git Branch Master 🌿",
     };
 
     // List of completed quests (Q1, Q2, Q3) to later display and use for logic

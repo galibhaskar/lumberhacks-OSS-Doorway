@@ -103,7 +103,7 @@ async function connectToDatabase() {
 
 // match and break down / command
 async function parseCommand(context, org, comment) {
-  const regex = /^(\/(new_user|del_user|del_repo|reset_repo|create_repos))(\s+(.+))?$/;
+  const regex = /^(\/(new_user|del_user|del_repo|reset_repo|create_repos|start_quest))(\s+(.+))?$/;
   const match = comment.match(regex);
   if (match) {
     const command = match[2];
@@ -132,7 +132,8 @@ async function parseCommand(context, org, comment) {
               owner,
               repo,
               context,
-              user_document.user_data
+              user_document.user_data,
+              db
             );
             await db.updateData(user_document);
           } else {
@@ -156,28 +157,34 @@ async function parseCommand(context, org, comment) {
           } catch {
             response = "repo reset failed";
           }
-          // might need to add hints to this?
-          case "new_hint":
-          // create hint
-          status = await db.createHint(argument);
-          if (status) {
-            response = "Hint added";
-            //var user_document = await db.downloadUserData(argument);
-            //gameFunction.acceptQuest(context, user_document.user_data, "Q0");
-            // update readme and data
-            /*gameFunction.updateReadme(
-              owner,
-              repo,
-              context,
-              user_document.user_data
-            );*/ // TODO: same as below
-            //await db.hintData(user_document);
-          } else {
-            response = "Failed to create new user, user already exists";
-          }
           break;
-          
-          
+        case "start_quest":
+          // manually start Quest Q4 for testing
+          try {
+            await connectToDatabase();
+            var user_document = await db.downloadUserData(argument);
+            
+            // Create a new context for the user's repository
+            const userContext = {
+              repo: () => ({ owner: org, repo: argument }),
+              octokit: context.octokit,
+              issue: () => context.issue(),
+              payload: context.payload
+            };
+            
+            var questAccepted = await gameFunction.acceptQuest(userContext, user_document.user_data, "Q4");
+            if (questAccepted) {
+              response = "Quest Q4 started successfully!";
+              await gameFunction.updateReadme(org, argument, userContext, user_document.user_data, db);
+              await db.updateData(user_document);
+            } else {
+              response = "Failed to start quest. User may already have an active quest.";
+            }
+            mongoose.disconnect();
+          } catch (error) {
+            response = "Error starting quest: " + error.message;
+            console.error(error);
+          }
           break;
         default:
           response = responses.invalidCommand;

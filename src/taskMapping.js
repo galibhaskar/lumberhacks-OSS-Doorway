@@ -285,6 +285,122 @@ async function handleQ3Quiz(user_data, user, context, ossRepo, response, selecte
     }
 }
 
+// Q4
+async function handleQ4T1(user_data, user, context, ossRepo, response, selectedIssue, db) {
+    const userResponse = context.payload.comment.body.trim().toLowerCase();
+    
+    // User should type "DONE" after creating the branch
+    if (userResponse === "done") {
+        // Verify branch exists by checking repository branches
+        const branchCreated = await utils.verifyBranchCreated(ossRepo, user, context);
+        
+        if (branchCreated) {
+            await completeTask(user_data, "Q4", "T1", context, db);
+            return [response.success, true];
+        }
+    }
+    
+    response = response.error;
+    response += `\n\n[Click here to start](https://github.com/${ossRepo})`;
+    return [response, false];
+}
+
+async function handleQ4T2(user_data, user, context, ossRepo, response, selectedIssue, db) {
+    const userResponse = context.payload.comment.body.trim().toLowerCase();
+    
+    if (userResponse === "done") {
+        // Verify that a commit was made with proper commit message
+        const properCommit = await utils.verifyCommitMessage(ossRepo, user, context);
+        
+        if (properCommit) {
+            await completeTask(user_data, "Q4", "T2", context, db);
+            return [response.success, true];
+        }
+    }
+    
+    response = response.error;
+    response += `\n\n[Click here to start](https://github.com/${ossRepo})`;
+    return [response, false];
+}
+
+async function handleQ4T3(user_data, user, context, ossRepo, response, selectedIssue, db) {
+    const userResponse = context.payload.comment.body.replace("#", "").trim();
+    
+    // User should provide PR number
+    const prNumber = Number(userResponse);
+    
+    if (!isNaN(prNumber) && prNumber > 0) {
+        // Verify PR exists and has proper naming
+        const properPR = await utils.verifyPullRequest(ossRepo, prNumber, context);
+        
+        if (properPR) {
+            user_data.selectedIssue = prNumber;
+            await completeTask(user_data, "Q4", "T3", context, db);
+            return [response.success, true];
+        }
+    }
+    
+    response = response.error;
+    response += `\n\n[Click here to start](https://github.com/${ossRepo})`;
+    return [response, false];
+}
+
+async function handleQ4T4(user_data, user, context, ossRepo, response, selectedIssue, db) {
+    const userResponse = context.payload.comment.body.trim().toLowerCase();
+    
+    if (userResponse === "done") {
+        // Verify conflict was resolved
+        const conflictResolved = await utils.verifyConflictResolved(ossRepo, user, context);
+        
+        if (conflictResolved) {
+            await completeTask(user_data, "Q4", "T4", context, db);
+            return [response.success, true];
+        }
+    }
+    
+    response = response.error;
+    response += `\n\n[Click here to start](https://github.com/${ossRepo})`;
+    return [response, false];
+}
+
+async function handleQ4T5(user_data, user, context, ossRepo, response, selectedIssue, db) {
+    const userResponse = context.payload.comment.body.trim().toLowerCase();
+    
+    if (userResponse === "done") {
+        // Verify PR was merged successfully
+        const prMerged = await utils.verifyPullRequestMerged(ossRepo, selectedIssue, context);
+        
+        if (prMerged) {
+            await completeTask(user_data, "Q4", "T5", context, db);
+            return [response.success, true];
+        }
+    }
+    
+    response = response.error;
+    response += `\n\n[Click here to start](https://github.com/${ossRepo})`;
+    return [response, false];
+}
+
+async function handleQ4Quiz(user_data, user, context, ossRepo, response, selectedIssue, db) {
+    const correctAnswers = ["b", "c", "c", "b", "b", "c"]; 
+    const userAnswerString = context.payload.comment.body;
+    
+    try {
+      const { correctAnswersNumber, feedback } = utils.validateAnswers(userAnswerString, correctAnswers);
+  
+      await completeTask(user_data, "Q4", "T6", context, db);
+  
+      response = response.success + 
+        `\n ## You correctly answered ${correctAnswersNumber} questions!` + 
+        `\n\n ### Feedback:\n${feedback.join('')}`;
+
+      return [response, true];
+    } catch (error) {
+      response = response.error + `\n\n[Click here to start](https://github.com/${ossRepo})`;
+      return [response, false];
+    }
+}
+
 // export quest functions as dictionary
 export const taskMapping = {
     Q0: {
@@ -310,5 +426,13 @@ export const taskMapping = {
         T2: handleQ3T2,
         T3: handleQ3T3,
         T4: handleQ3Quiz,
+    },
+    Q4: {
+        T1: handleQ4T1,
+        T2: handleQ4T2,
+        T3: handleQ4T3,
+        T4: handleQ4T4,
+        T5: handleQ4T5,
+        T6: handleQ4Quiz,
     }
 };

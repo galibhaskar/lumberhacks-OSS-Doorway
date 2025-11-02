@@ -196,5 +196,87 @@
                 "penalty" : 5
             }
         }
+    },
+    "Q4":{
+        "T1":{
+            "H1":{
+                "content": "### 💡 Hints\n\n**Hint 1:** The command to create and switch to a new branch in Git is `git checkout -b [branch-name]`.\n\n**Remember:** Branch names should be lowercase and use hyphens, not spaces or special characters.\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 1,
+                "penalty" : 5
+            },
+            "H2":{
+                "content": "### 💡 Hints\n\n**Hint 2:** Your branch name must follow this exact pattern: `feature/add-[your-github-username]-functionality`\n\n**Example:** If your GitHub username is `johndoe`, your branch should be named: `feature/add-johndoe-functionality`\n\n**Tip:** Make sure you're on your repository's main branch before creating the new branch!\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 2,
+                "penalty" : 5
+            }
+        },
+        "T2":{
+            "H1":{
+                "content": "### 💡 Hints\n\n**Hint 1:** The conventional commit format uses a type prefix followed by a colon and a description.\n\n**Common types:**\n- `feat:` for new features\n- `fix:` for bug fixes\n- `docs:` for documentation changes\n- `style:` for formatting changes\n\n**Example:** `feat: add login button to header`\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 1,
+                "penalty" : 5
+            },
+            "H2":{
+                "content": "### 💡 Hints\n\n**Hint 2:** A good commit message should:\n- Start with a type (feat:, fix:, docs:)\n- Be in lowercase\n- Be descriptive but concise (under 72 characters)\n- Explain WHAT changed, not HOW\n\n**Good:** `feat: add user authentication module`\n**Bad:** `my changes` or `fix`\n\nRemember: Commit messages are like mini-documentation for your changes!\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 2,
+                "penalty" : 5
+            }
+        },
+        "T3":{
+            "H1":{
+                "content": "### 💡 Hints\n\n**Hint 1:** To create a pull request on GitHub:\n1. Push your branch to GitHub using `git push origin [branch-name]`\n2. Go to the repository on GitHub\n3. Click \"Pull requests\" tab\n4. Click \"New pull request\"\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 1,
+                "penalty" : 5
+            },
+            "H2":{
+                "content": "### 💡 Hints\n\n**Hint 2:** Your PR title should follow the same format as commit messages:\n- Start with a type prefix (feat:, fix:, docs:)\n- Follow with a clear description\n- Use lowercase\n\n**Example:** `feat: add dark mode toggle to settings`\n\n**Don't forget:** Write a helpful description explaining what your PR does and why!\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 2,
+                "penalty" : 5
+            }
+        },
+        "T4":{
+            "H1":{
+                "content": "### 💡 Hints\n\n**Hint 1:** Merge conflicts are marked with special markers in your files:\n- `<<<<<<<` marks the start of YOUR changes\n- `=======` separates your changes from theirs\n- `>>>>>>>` marks the end of THEIR changes\n\nYour job is to remove these markers and keep the best solution!\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 1,
+                "penalty" : 5
+            },
+            "H2":{
+                "content": "### 💡 Hints\n\n**Hint 2:** When resolving conflicts:\n1. Open the file with conflicts\n2. Look for the conflict markers (<<<<<<<, =======, >>>>>>>)\n3. Decide which changes to keep (or combine both)\n4. Remove ALL conflict markers\n5. Save the file\n6. Stage the file: `git add [filename]`\n7. Commit: `git commit -m \"Merge: resolve conflicts\"`\n\n**Tip:** Don't leave any conflict markers in your code!\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 2,
+                "penalty" : 5
+            }
+        },
+        "T5":{
+            "H1":{
+                "content": "### 💡 Hints\n\n**Hint 1:** To merge a pull request:\n1. Go to your PR on GitHub\n2. Scroll down past the conversation\n3. Look for the green \"Merge pull request\" button\n4. Click it and confirm\n\n**Make sure:** All checks are passing before merging!\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 1,
+                "penalty" : 5
+            },
+            "H2":{
+                "content": "### 💡 Hints\n\n**Hint 2:** The merge process is complete when:\n✓ The PR status shows \"Merged\" (green badge)\n✓ Your changes are visible in the main branch\n✓ The PR is closed\n✓ You receive a notification\n\n**Congratulations!** You're almost done with the quest!\n\n",
+                "video": null,
+                "image": null,
+                "sequence": 2,
+                "penalty" : 5
+            }
+        }
     }
 }

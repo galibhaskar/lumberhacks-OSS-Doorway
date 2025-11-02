@@ -103,5 +103,41 @@
       "points": 0,
       "xp": 0
     }
+  },
+  "Q4": {
+    "metadata": {
+      "title": "Branching & Resolve Merge Conflicts",
+      "prerequisite": "Q3"
+    },
+    "T1": {
+      "desc": "Create and switch to a feature branch",
+      "points": 30,
+      "xp": 30
+    },
+    "T2": {
+      "desc": "Make changes on feature branch",
+      "points": 20,
+      "xp": 20
+    },
+    "T3": {
+      "desc": "Create pull request with proper naming",
+      "points": 25,
+      "xp": 25
+    },
+    "T4": {
+      "desc": "Resolve merge conflict using best practices",
+      "points": 50,
+      "xp": 50
+    },
+    "T5": {
+      "desc": "Final code review and merge",
+      "points": 30,
+      "xp": 30
+    },
+    "T6": {
+      "desc": "Quiz",
+      "points": 0,
+      "xp": 0
+    }
   }
 }
